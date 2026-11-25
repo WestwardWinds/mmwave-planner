@@ -1,0 +1,10 @@
+{
+  "room": { "w": 5, "d": 4, "h": 2.6, "ceiling": "double", "peak": 3.4, "low": "y0", "ridge": "x" },
+  "sensors": [
+    { "id": 1, "name": "Ceiling LD2412", "color": 1, "x": 2.5, "y": 1.2, "z": 3.0, "pan": 0, "tilt": -69, "roll": 0, "hfov": 150, "vfov": 150, "range": 9 }
+  ],
+  "active": 1,
+  "points": [{ "id": 1, "name": "Desk", "x": 4.2, "y": 0.8, "z": 1.0 }],
+  "obstacles": [{ "id": 1, "name": "Wardrobe", "x": 1.0, "y": 3.6, "z": 0, "w": 1.6, "d": 0.6, "h": 2.0, "rot": 0 }],
+  "view": { "clip": true, "slice": true, "sliceH": 0.9, "rings": false, "snap": true, "units": "m", "cones": "all" }
+}

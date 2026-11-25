@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Embedding the planner</title>
+    <style>
+      body { margin: 0; font: 16px/1.6 system-ui, sans-serif; background: #fff; color: #1c1e21; }
+      html[data-theme="dark"] body { background: #1b1b1d; color: #e3e3e3; }
+      main { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
+      code { background: rgba(127, 127, 127, 0.15); padding: 1px 4px; border-radius: 4px; }
+      mmwave-planner { --mmwave-height: 560px; --mmwave-radius: 10px; margin: 16px 0 32px; }
+    </style>
+    <!-- In a docs site, load the built file instead: <script type="module" src="/js/mmwave-planner.js"></script> -->
+    <script type="module" src="/src/index.ts"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Embedding the planner</h1>
+      <p>This page mimics a docs site. The button flips <code>html[data-theme]</code> the way Docusaurus does, and both planners follow it.</p>
+      <button type="button" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">Toggle page theme</button>
+
+      <h2>A ceiling-mounted LD2412 under a gable roof</h2>
+      <p>Loaded from a JSON file with <code>src="ceiling-ld2412.json"</code>. Edits are not saved. Try the Full screen button.</p>
+      <mmwave-planner src="ceiling-ld2412.json"></mmwave-planner>
+
+      <h2>Two wall sensors, 3D view only</h2>
+      <p>Configured inline with a <code>&lt;script type="application/json"&gt;</code> child, panel hidden with <code>hide-panel</code>.</p>
+      <mmwave-planner hide-panel>
+        <script type="application/json">
+          {
+            "room": { "w": 6, "d": 4.5, "h": 2.5 },
+            "sensors": [
+              { "id": 1, "name": "Left wall", "x": 0.02, "y": 2.25, "z": 1.5, "pan": 90, "tilt": -10, "hfov": 120, "vfov": 70, "range": 6 },
+              { "id": 2, "name": "Right wall", "x": 5.98, "y": 2.25, "z": 1.5, "pan": -90, "tilt": -10, "hfov": 120, "vfov": 70, "range": 6 }
+            ],
+            "points": [{ "id": 1, "name": "Couch", "x": 3, "y": 3.5, "z": 0.9 }],
+            "obstacles": []
+          }
+        </script>
+      </mmwave-planner>
+    </main>
+  </body>
+</html>
