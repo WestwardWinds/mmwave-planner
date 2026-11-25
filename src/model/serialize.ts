@@ -1,5 +1,5 @@
 import { num, pick } from "./math";
-import { DEFAULT_STATE, SENSOR_TEMPLATE } from "./presets";
+import { DEFAULT_STATE, matchModel, modelById, SENSOR_TEMPLATE } from "./presets";
 import type { Obstacle, PlannerState, Sensor, TestPoint } from "./types";
 
 const clone = <T>(o: T): T => JSON.parse(JSON.stringify(o));
@@ -35,7 +35,15 @@ export function assignColors(sensors: Sensor[]): void {
 
 function cleanSensor(src: Rec, i: number): Sensor {
   const o = { id: num(src.id, i + 1), name: String(src.name || "Sensor " + (i + 1)).slice(0, 40), color: num(src.color, 0) } as Sensor;
-  for (const k of SENSOR_KEYS) o[k] = num(src[k], SENSOR_TEMPLATE[k]);
+  // a sensor that names its model gets that model's field of view and range for anything it leaves out
+  const named = typeof src.model === "string" ? modelById(src.model) : undefined;
+  const base = named ? { ...SENSOR_TEMPLATE, hfov: named.hfov, vfov: named.vfov, range: named.range } : SENSOR_TEMPLATE;
+  for (const k of SENSOR_KEYS) o[k] = num(src[k], base[k]);
+  // saves from before sensors stored their model: recognize it from the field of view and range
+  o.model = named ? named.id : src.model === "custom" ? "custom" : (matchModel(o)?.id ?? "custom");
+  const gates = modelById(o.model)?.gates;
+  o.gate = gates ? (gates.spacings.includes(src.gate as number) ? (src.gate as number) : gates.spacing) : num(src.gate, SENSOR_TEMPLATE.gate);
+  if (gates) o.range = Math.min(o.range, gates.last * o.gate); // a gated sensor can't see past its last gate
   return o;
 }
 

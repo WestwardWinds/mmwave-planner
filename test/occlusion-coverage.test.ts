@@ -6,7 +6,7 @@ import type { Obstacle, PlannerState, Room, Sensor } from "../src/model/types";
 const box = (o: Partial<Obstacle>): Obstacle => ({ id: 1, name: "box", x: 0, y: 0, z: 0, w: 2, d: 1, h: 2, rot: 0, ...o });
 
 const sensor = (o: Partial<Sensor>): Sensor => ({
-  id: 1, name: "S", color: 1, x: 0, y: 0, z: 2, pan: 0, tilt: 0, roll: 0, hfov: 179, vfov: 179, range: 10, ...o
+  id: 1, name: "S", color: 1, x: 0, y: 0, z: 2, pan: 0, tilt: 0, roll: 0, hfov: 179, vfov: 179, range: 10, model: "custom", gate: 0.75, ...o
 });
 
 const room = (o: Partial<Room>): Room => ({ w: 2, d: 2, h: 2.5, ceiling: "flat", peak: 2.5, low: "y0", ridge: "x", ...o });

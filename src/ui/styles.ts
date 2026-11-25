@@ -105,6 +105,7 @@ export const styles = css`
   .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .field > label { font-size: 12px; color: var(--muted); }
   .field > label b { color: var(--fg); font-weight: 500; }
+  .lab { font-size: 12px; color: var(--muted); }
   .pair { display: grid; grid-template-columns: minmax(0, 1fr) 74px; gap: 8px; align-items: center; }
   .help { font-size: 11px; color: var(--muted); margin: 0; }
   input[type="number"], input[type="text"], select {

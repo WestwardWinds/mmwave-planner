@@ -5,6 +5,7 @@ import {
 import { D2R } from "../model/math";
 import { sensorBasis } from "../model/radar";
 import type { Sensor, Units } from "../model/types";
+import { ringDistances } from "../model/presets";
 import { ringStep } from "../model/units";
 import { lineGeom, makeDrop, sensorColor, sensorCss, setDrop, U2T, V2T, type Label, type Theme } from "./helpers";
 
@@ -121,7 +122,7 @@ export class SensorViews {
   }
 
   private buildCone(r: Rig, s: Sensor, units: Units): void {
-    const key = [s.hfov, s.vfov, s.range, units].join("|");
+    const key = [s.hfov, s.vfov, s.range, units, s.model, s.gate].join("|");
     if (key === r.key) return;
     r.key = key;
     const H = s.hfov * D2R, V = s.vfov * D2R, R = s.range;
@@ -168,8 +169,8 @@ export class SensorViews {
 
     const rr: number[] = [];
     const rseg = (p: number[], q: number[]) => rr.push(p[0], p[1], p[2], q[0], q[1], q[2]);
-    const rs = ringStep(units);
-    for (let n = 1, k = rs; k < R - 1e-6 && n <= 40; n++, k = n * rs) {
+    // a ring per gate for gated sensors (LD2410 / LD2412), otherwise every 1 m or 3 ft
+    for (const k of ringDistances(s, ringStep(units))) {
       for (let i = 0; i < Na; i++) rseg(dir(az(i), 0, k), dir(az(i + 1), 0, k));
       for (let j = 0; j < Ne; j++) rseg(dir(0, el(j), k), dir(0, el(j + 1), k));
     }

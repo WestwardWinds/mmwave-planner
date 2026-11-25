@@ -13,6 +13,8 @@
       h3 { margin: 24px 0 4px; font-size: 1.05rem; }
       ul { margin: 0; padding-left: 1.25rem; }
       li { margin: 2px 0; }
+      .callout { margin: 12px 0 0; padding: 10px 14px; border-left: 4px solid #0b7f8c; background: rgba(11, 127, 140, 0.08); border-radius: 0 6px 6px 0; }
+      html[data-theme="dark"] .callout { border-left-color: #3cc3cf; background: rgba(60, 195, 207, 0.1); }
       .swatch { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 2px; vertical-align: -0.05em; margin-right: 4px; }
     </style>
     <!-- In a docs site, load the built file instead: <script type="module" src="/js/mmwave-planner.js"></script> -->
@@ -22,7 +24,7 @@
     <main>
       <h1>mmWave Coverage Planner</h1>
 
-      <mmwave-planner src="ceiling-ld2412.json" use-hash></mmwave-planner>
+      <mmwave-planner src="ceiling-ld2450.json" use-hash></mmwave-planner>
 
       <h2>Instructions</h2>
       <p>Lengths are in meters or feet and inches (switch at the top of the panel); angles are in degrees. The origin is the front-left floor corner: X runs along the width, Y into the room, Z up.</p>
@@ -44,10 +46,17 @@
       <h3>Place and aim sensors</h3>
       <ul>
         <li>Add, rename, select and remove sensors in the <b>Sensors</b> section. Each sensor has its own color, and the settings below it apply to the selected one.</li>
-        <li>Type an X, Y, Z position, drag it in 3D with <b>Move in 3D</b>, or pick a <b>Quick mount</b>: wall, ceiling corner, ceiling center, or flush against the ceiling (useful on slopes).</li>
-        <li>Aim it with <b>horizontal tilt</b> (pan), <b>vertical tilt</b> (pitch) and <b>roll</b>.</li>
-        <li>Pick a <b>sensor model</b> (HLK-LD2450, HLK-LD2412) or set the horizontal and vertical field of view and max distance yourself.</li>
+        <li>Type an X, Y, Z position, or drag it in 3D with <b>Move in 3D</b>.</li>
+        <li>Use the <b>Snapping</b> buttons to mount the sensor and aim it the usual way for that spot:
+          <b>Nearest Wall</b> puts it flat on the closest wall, pointing straight out;
+          <b>Nearest Corner</b> tucks it into the closest corner, pointing 45° into the room, level;
+          <b>Nearest Ceiling</b> sets it flush on the ceiling above, matching the ceiling's slope (straight down on a flat ceiling). Walls and corners keep the sensor's height.</li>
+        <li><b>Aim at room center</b> points the sensor at the middle of the room.</li>
+        <li>Fine-tune with <b>horizontal tilt</b> (pan), <b>vertical tilt</b> (pitch) and <b>roll</b>.</li>
+        <li>Pick a <b>sensor model</b> (HLK-LD2450, the default; HLK-LD2412; HLK-LD2410) or set the horizontal and vertical field of view and max distance yourself.</li>
+        <li>The LD2412 and LD2410 measure distance in <b>gates</b>: gate 0 is at the sensor, then one gate every set distance. Choose the <b>gate spacing</b> (LD2412: gates 0–13 at 0.75, 0.5 or 0.2 m, reaching 9, 6.5 or 2.6 m; LD2410: gates 0–8 at 0.75 or 0.2 m, reaching 5 or 1.6 m). The rings on the cone mark each gate, and the max distance can't go past the last gate. The closer spacings need newer sensor firmware.</li>
       </ul>
+      <p class="callout"><b>Using the Apollo R PRO-1 ceiling mount?</b> Don't tilt or aim the sensor by hand. The recessed can mount can't tilt, so the sensor always matches the ceiling's pitch. Use <b>Nearest Ceiling</b> and leave the tilt as it sets it.</p>
 
       <h3>Test spots in the room</h3>
       <ul>

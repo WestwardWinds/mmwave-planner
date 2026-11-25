@@ -38,6 +38,10 @@ export interface Sensor {
   hfov: number;
   vfov: number;
   range: number;
+  /** Sensor model id from SENSOR_MODELS (e.g. "ld2450"), or "custom". */
+  model: string;
+  /** Gate spacing in meters, for models that report distance in gates (LD2410, LD2412). */
+  gate: number;
 }
 
 export interface TestPoint {

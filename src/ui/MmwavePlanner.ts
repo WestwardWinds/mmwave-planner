@@ -3,11 +3,12 @@ import { isPitched, peakZ, ceilAt, ceilPlanes } from "../model/ceiling";
 import { classifyAll, formatReason, type PointResult } from "../model/classify";
 import { computeCoverage, type Coverage } from "../model/coverage";
 import {
-  activeSensor, addObstacle, addPoint, addSensor, aimAt, applyModel, applyMount, CeilingMounts, clampAll,
-  clampBox, clampToRoom, removeSensor, setCeiling, type MountPreset
+  activeSensor, addObstacle, addPoint, addSensor, aimAt, aimAtRoomCenter, applyModel, CeilingMounts, clampAll,
+  clampBox, clampToRoom, fovEdited, ratedRange, removeSensor, setCeiling, setGateSpacing, setSensorFov, setSensorRange, snapToCeiling,
+  snapToCorner, snapToWall
 } from "../model/edits";
 import { clamp, fmt, round } from "../model/math";
-import { DEFAULT_STATE, matchModel, SENSOR_MODELS } from "../model/presets";
+import { DEFAULT_STATE, gateInfo, modelById, SENSOR_MODELS } from "../model/presets";
 import { cloneState, decodeShare, encodeShare, parseState, serializeState } from "../model/serialize";
 import { Store } from "../model/store";
 import type { CeilingKind, Obstacle, PlannerState, Sensor, TestPoint } from "../model/types";
@@ -188,7 +189,10 @@ export class MmwavePlanner extends LitElement {
     if (changed.has("src") && changed.get("src") !== undefined && this.src) void this.fetchSrc(this.src);
     // the model menu's options are a dynamic list, so its value is set after they exist
     const model = this.renderRoot.querySelector("#model") as HTMLSelectElement | null;
-    if (model) model.value = matchModel(activeSensor(this.store.state))?.id ?? "custom";
+    if (model) model.value = activeSensor(this.store.state).model;
+    const gate = this.renderRoot.querySelector("#gate") as HTMLSelectElement | null;
+    const g = gateInfo(activeSensor(this.store.state));
+    if (gate && g) gate.value = String(g.spacing);
   }
 
   // ---------- state ----------
@@ -476,6 +480,16 @@ export class MmwavePlanner extends LitElement {
   // ---------- small helpers ----------
   private get units() { return this.store.state.view.units; }
 
+  private posNote = "";
+  private posNoteTimer = 0;
+  /** A short confirmation under the Position buttons (what the sensor snapped to). Each new note restarts the timer. */
+  private showPosNote(msg: string): void {
+    this.posNote = msg;
+    this.requestUpdate();
+    clearTimeout(this.posNoteTimer);
+    this.posNoteTimer = window.setTimeout(() => { this.posNote = ""; this.requestUpdate(); }, 3500);
+  }
+
   private showFlash(msg: string): void {
     this.flash = msg;
     this.requestUpdate();
@@ -678,21 +692,22 @@ export class MmwavePlanner extends LitElement {
       <h2 id="h-pos">${this.secToggle("pos", "Position")}${this.actName(st)}</h2>
       <div class="grid3">${posField("x", st.room.w)}${posField("y", st.room.d)}${posField("z", ceilAt(cp, a.x, a.y))}</div>
       <div class="field">
-        <label for="preset">Quick mount</label>
-        <select id="preset" .value=${""} @change=${(e: Event) => {
-          const el = e.target as HTMLSelectElement, v = el.value as MountPreset;
-          el.value = "";
-          if (v) this.editActive((s, sst) => applyMount(sst, s, v));
-        }}>
-          <option value="">Choose a mounting spot…</option>
-          <option value="front">Front wall, centered, facing in</option>
-          <option value="left">Left wall, centered, facing in</option>
-          <option value="corner">Ceiling corner, aimed diagonally</option>
-          <option value="ceiling">Ceiling center, pointing straight down</option>
-          <option value="flush">Flush on the ceiling above its current spot</option>
-        </select>
-        <p class="help">"Flush on the ceiling" lays the sensor flat against the ceiling, so on a sloped ceiling it faces at right angles to the slope.</p>
+        <span class="lab" id="snap-label">Snapping</span>
+        <div class="row" role="group" aria-labelledby="snap-label">
+          ${([
+            ["Nearest Wall", "Flat against the nearest wall, pointing straight out", snapToWall],
+            ["Nearest Corner", "Into the nearest corner, angled 45° into the room", snapToCorner],
+            ["Nearest Ceiling", "Flush on the ceiling above, matching its slope", snapToCeiling]
+          ] as const).map(([label, title, fn]) => html`<button type="button" class="btn" title=${title}
+            @click=${() => { let msg = ""; this.editActive((s, sst) => { msg = fn(sst, s); }); this.showPosNote(msg); }}>${label}</button>`)}
+        </div>
       </div>
+      <div class="row">
+        <button type="button" class="btn" title="Point the sensor at the middle of the room"
+          @click=${() => { this.editActive((s, sst) => aimAtRoomCenter(sst, s)); this.showPosNote("Aimed at the center of the room."); }}>Aim at room center</button>
+      </div>
+      ${this.posNote ? html`<p class="note" role="status">${this.posNote}</p>` : nothing}
+      <p class="help">Walls and corners keep the sensor's height and aim it level: straight out from a wall, 45° into the room from a corner. Ceiling mounts sit flush, so they match the ceiling's slope (straight down on a flat ceiling).</p>
     </section>`;
   }
 
@@ -711,10 +726,12 @@ export class MmwavePlanner extends LitElement {
 
   private radarSection(st: PlannerState): TemplateResult {
     const a = activeSensor(st);
-    const model = matchModel(a);
+    const model = modelById(a.model);
+    const gates = gateInfo(a);
+    const u = this.units;
     const fov = (k: "hfov" | "vfov", label: string) => this.pair({
       id: k, label, min: 1, max: 180, sMin: 1, sMax: 180, sStep: 1, unit: "°", d: 1,
-      get: () => activeSensor(this.store.state)[k], set: (v) => this.editActive((s) => { s[k] = v; })
+      get: () => activeSensor(this.store.state)[k], set: (v) => this.editActive((s) => setSensorFov(s, k, v))
     });
     return html`<section aria-labelledby="h-radar" class=${this.secClass("radar")}>
       <h2 id="h-radar">${this.secToggle("radar", "Radar parameters")}${this.actName(st)}</h2>
@@ -725,12 +742,24 @@ export class MmwavePlanner extends LitElement {
           ${SENSOR_MODELS.map((m) => html`<option value=${m.id}>${m.label}</option>`)}
         </select>
         <p class="help">${model ? model.note : "Pick a model to fill in its field of view and range, or set them by hand below."}</p>
+        ${fovEdited(a) ? html`<p class="note">The field of view has been changed from this model's ${model!.hfov}° × ${model!.vfov}°. Pick the model again to reset it.</p>` : nothing}
       </div>
+      ${gates ? html`<div class="field">
+        <label for="gate">Gate spacing</label>
+        <select id="gate" @change=${(e: Event) => this.editActive((s) => setGateSpacing(s, parseFloat((e.target as HTMLSelectElement).value)))}>
+          ${gates.spacings.map((g) => html`<option value=${g} ?selected=${g === gates.spacing}>${fmtLen(g, u)} apart (reaches ${fmtLen(ratedRange(model!, g), u)})</option>`)}
+        </select>
+        <p class="help">Gates 0–${gates.last}: gate 0 is at the sensor, then one every ${fmtLen(gates.spacing, u)}. The cone's rings mark each gate within the max distance.
+          ${ratedRange(model!, gates.spacing) < gates.max - 1e-9
+            ? `The sensor is rated to ${fmtLen(ratedRange(model!, gates.spacing), u)} at this spacing, so gate ${gates.last} (${fmtLen(gates.max, u)}) is past its reach; the max distance can be raised to it.`
+            : `Max distance can't go past gate ${gates.last} (${fmtLen(gates.max, u)}).`}</p>
+      </div>` : nothing}
       ${fov("hfov", "Horizontal field of view")}
       ${fov("vfov", "Vertical field of view")}
       ${this.pair({
-        id: "range", label: "Max detection distance", len: true, min: 0.1, max: 50, sMin: 0.5, sMax: 20, sStep: 0.1, step: 0.1,
-        get: () => activeSensor(this.store.state).range, set: (v) => this.editActive((s) => { s.range = v; })
+        id: "range", label: "Max detection distance", len: true, min: 0.1, max: gates ? gates.max : 50,
+        sMin: 0.5, sMax: gates ? gates.max : 20, sStep: 0.05, step: 0.1,
+        get: () => activeSensor(this.store.state).range, set: (v) => this.editActive((s) => setSensorRange(s, v))
       })}
     </section>`;
   }
@@ -853,7 +882,7 @@ export class MmwavePlanner extends LitElement {
         </select>
       </div>
       ${check("clip", "Clip coverage at the walls and ceiling")}
-      ${check("rings", `Show range rings every ${imp ? "3 ft" : "1 m"}`)}
+      ${check("rings", `Show range rings (every ${imp ? "3 ft" : "1 m"}, or each gate on LD2410 / LD2412)`)}
       ${check("snap", `Snap 3D dragging to ${imp ? "1 inch" : "5 cm"}`)}
       ${check("slice", "Show coverage slice")}
       ${this.pair({

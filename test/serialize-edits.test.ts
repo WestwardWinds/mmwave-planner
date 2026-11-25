@@ -235,9 +235,9 @@ describe("applyMount", () => {
   it("corner on a slope", () => {
     const st = sloped(); const s = st.sensors[0];
     applyMount(st, s, "corner");
-    // ceiling at y=0.05: 2.6 + 0.0125 = 2.6125; minus 0.05
-    expect(s).toMatchObject({ x: 0.05, y: 0.05, pan: 45, tilt: -35 });
-    expect(s.z).toBeCloseTo(2.5625);
+    // ceiling at y=0.06: 2.6 + 0.06/4 = 2.615; minus 0.1 so it reads as a corner mount, not a ceiling one
+    expect(s).toMatchObject({ x: 0.06, y: 0.06, pan: 45, tilt: -35 });
+    expect(s.z).toBeCloseTo(2.515, 6);
   });
   it("ceiling", () => {
     const st = sloped(); const s = st.sensors[0];
@@ -252,7 +252,7 @@ describe("applyMount", () => {
     applyMount(st, s, "flush");
     expect(s.tilt).toBe(-90);
     expect(s.pan).toBe(33);
-    expect(s.z).toBeCloseTo(2.58);
+    expect(s.z).toBeCloseTo(2.575, 6); // 2.6 - the 2.5 cm body depth
   });
   it("flush on a gable slope (2.5 m half-width, 1 m rise) tilts ~-68.2 deg toward the ridge", () => {
     const st = fresh();
@@ -263,7 +263,8 @@ describe("applyMount", () => {
     // plane z = 2.6 + 0.4x; normal (0.4, 0, -1): tilt = asin(-1/sqrt(1.16)) = -68.2, pan = atan2(0.4, 0) = 90 (+X, ridge at x=2.5)
     expect(s.tilt).toBeCloseTo(-68.2, 1);
     expect(s.pan).toBeCloseTo(90, 1);
-    expect(s.z).toBeCloseTo(2.98); // 2.6 + 0.4 - 0.02
+    // 2.6 + 0.4, less the 2.5 cm body depth measured square to the slope: 0.025 * sqrt(1.16) vertically
+    expect(s.z).toBeCloseTo(3.0 - 0.025 * Math.sqrt(1.16), 6);
     // on the far side the slope points back toward the ridge
     Object.assign(s, { x: 4 });
     applyMount(st, s, "flush");

@@ -8,7 +8,7 @@ const cross = (a: Vec3, b: Vec3): Vec3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0
 const expectVec = (a: Vec3, b: Vec3, d = 9) => a.forEach((v, i) => expect(v).toBeCloseTo(b[i], d));
 
 function sensor(over: Partial<Sensor> = {}): Sensor {
-  return { id: 1, name: "S1", color: 1, x: 0, y: 0, z: 0, pan: 0, tilt: 0, roll: 0, hfov: 120, vfov: 60, range: 6, ...over };
+  return { id: 1, name: "S1", color: 1, x: 0, y: 0, z: 0, pan: 0, tilt: 0, roll: 0, hfov: 120, vfov: 60, range: 6, model: "custom", gate: 0.75, ...over };
 }
 function box(over: Partial<Obstacle> = {}): Obstacle {
   return { id: 1, name: "Sofa", x: 0, y: 0, z: 0, w: 1, d: 1, h: 1, rot: 0, ...over };

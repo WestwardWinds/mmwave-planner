@@ -3,6 +3,8 @@
 A 3D planner for mmWave presence sensors. Set up a room (flat, single-pitch or gable ceiling), place one or more sensors, add furniture that blocks the radar, and see:
 
 - each sensor's coverage cone, from its field of view, max distance, pan, tilt and roll
+- one-click mounting: snap a sensor to the nearest wall, corner or ceiling (flush, matching a sloped ceiling), or aim it at the room center
+- gate rings and gate spacing for sensors that measure distance in gates (LD2410, LD2412)
 - where sensors overlap, on a floor-plan "coverage slice" at any height
 - dead spots: in range, but hidden behind an obstacle
 - whether named test points are detected, and if not, why
@@ -84,10 +86,18 @@ The model is the source of truth: the scene and panel only display it, and every
 
 ### Adding a sensor model
 
-Add an entry to `SENSOR_MODELS` in `src/model/presets.ts` (field of view, range and a short note). It appears in the "Sensor model" menu.
+Add an entry to `SENSOR_MODELS` in `src/model/presets.ts` (field of view, range and a short note). It appears in the "Sensor model" menu. For sensors that report distance in gates, add `gates: { last, spacings, spacing }`: the panel then offers a gate spacing, the cone's rings mark each gate, and the max distance stops at the last gate.
 
 ## How detection is decided
 
 A spot is in a sensor's cone when it is within max distance, its azimuth `atan2(right, forward)` is within ±HFOV/2, and its elevation `asin(up / range)` is within ±VFOV/2, all in the sensor's own frame. It is detected when the straight line from the sensor to it also misses every obstacle box. This is a rough guide: real radar partly passes through thin furniture and reflects off walls.
 
-Sensor presets: LD2450 values (±60° × ±35°, 6 m) are from Hi-Link's manual. LD2412 listings give a single ±75° angle and 9 m, applied to both axes.
+Sensor presets, checked against published specs:
+
+| Model | Field of view | Max distance | Gates | Source |
+|---|---|---|---|---|
+| HLK-LD2450 (default) | ±60° horizontal, ±35° vertical | 6 m | none | Hi-Link manual V1.00 |
+| HLK-LD2412 | ±75° (one angle, used for both axes) | 9 m | 0–13 at 0.75 / 0.5 / 0.2 m, reaching 9 / 6.5 / 2.6 m | Hi-Link listings, serial protocol V1.05 |
+| HLK-LD2410 | ±60° (one angle, used for both axes) | 5 m | 0–8 at 0.75 / 0.2 m, reaching 5 / 1.6 m (gate 8 at 0.75 m is 6 m) | Hi-Link spec sheet, manuals V1.02 / LD2410C V1.00 |
+
+Hi-Link gives only one detection angle for the LD2412 and LD2410, without saying which axis, so the planner uses it for both. The closer gate spacings need newer firmware.
