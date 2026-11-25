@@ -3,42 +3,77 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Embedding the planner</title>
+    <title>mmWave Coverage Planner · Instructions</title>
     <style>
       body { margin: 0; font: 16px/1.6 system-ui, sans-serif; background: #fff; color: #1c1e21; }
       html[data-theme="dark"] body { background: #1b1b1d; color: #e3e3e3; }
       main { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
       code { background: rgba(127, 127, 127, 0.15); padding: 1px 4px; border-radius: 4px; }
-      mmwave-planner { --mmwave-height: 560px; --mmwave-radius: 10px; margin: 16px 0 32px; }
+      mmwave-planner { --mmwave-height: 600px; --mmwave-radius: 10px; margin: 16px 0 32px; }
+      h3 { margin: 24px 0 4px; font-size: 1.05rem; }
+      ul { margin: 0; padding-left: 1.25rem; }
+      li { margin: 2px 0; }
+      .swatch { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 2px; vertical-align: -0.05em; margin-right: 4px; }
     </style>
     <!-- In a docs site, load the built file instead: <script type="module" src="/js/mmwave-planner.js"></script> -->
     <script type="module" src="/src/index.ts"></script>
   </head>
   <body>
     <main>
-      <h1>Embedding the planner</h1>
-      <p>This page mimics a docs site. The button flips <code>html[data-theme]</code> the way Docusaurus does, and both planners follow it.</p>
-      <button type="button" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">Toggle page theme</button>
+      <h1>mmWave Coverage Planner</h1>
 
-      <h2>A ceiling-mounted LD2412 under a gable roof</h2>
-      <p>Loaded from a JSON file with <code>src="ceiling-ld2412.json"</code>. Edits are not saved. Try the Full screen button.</p>
-      <mmwave-planner src="ceiling-ld2412.json"></mmwave-planner>
+      <mmwave-planner src="ceiling-ld2412.json" use-hash></mmwave-planner>
 
-      <h2>Two wall sensors, 3D view only</h2>
-      <p>Configured inline with a <code>&lt;script type="application/json"&gt;</code> child, panel hidden with <code>hide-panel</code>.</p>
-      <mmwave-planner hide-panel>
-        <script type="application/json">
-          {
-            "room": { "w": 6, "d": 4.5, "h": 2.5 },
-            "sensors": [
-              { "id": 1, "name": "Left wall", "x": 0.02, "y": 2.25, "z": 1.5, "pan": 90, "tilt": -10, "hfov": 120, "vfov": 70, "range": 6 },
-              { "id": 2, "name": "Right wall", "x": 5.98, "y": 2.25, "z": 1.5, "pan": -90, "tilt": -10, "hfov": 120, "vfov": 70, "range": 6 }
-            ],
-            "points": [{ "id": 1, "name": "Couch", "x": 3, "y": 3.5, "z": 0.9 }],
-            "obstacles": []
-          }
-        </script>
-      </mmwave-planner>
+      <h2>Instructions</h2>
+      <p>Lengths are in meters or feet and inches (switch at the top of the panel); angles are in degrees. The origin is the front-left floor corner: X runs along the width, Y into the room, Z up.</p>
+
+      <h3>Move around the 3D view</h3>
+      <ul>
+        <li>Drag to orbit, scroll to zoom, right-drag to pan.</li>
+        <li>Jump to a preset camera with <b>3D</b>, <b>Top</b>, <b>Front</b> or <b>Side</b>.</li>
+        <li>Press <b>Full screen</b> to fill the screen; Esc or <b>Exit full screen</b> brings it back.</li>
+        <li>Click a sensor, test point or box to select it, then drag one of its arrows to move it along X (red), Y (blue) or Z (green). Esc or clicking empty space finishes.</li>
+      </ul>
+
+      <h3>Set up the room</h3>
+      <ul>
+        <li>Enter the width, depth and height.</li>
+        <li>Choose a <b>flat</b>, <b>single pitch</b> or <b>double pitch</b> (gable) ceiling. For pitched ceilings, set the peak height and which wall is low or which way the ridge runs.</li>
+      </ul>
+
+      <h3>Place and aim sensors</h3>
+      <ul>
+        <li>Add, rename, select and remove sensors in the <b>Sensors</b> section. Each sensor has its own color, and the settings below it apply to the selected one.</li>
+        <li>Type an X, Y, Z position, drag it in 3D with <b>Move in 3D</b>, or pick a <b>Quick mount</b>: wall, ceiling corner, ceiling center, or flush against the ceiling (useful on slopes).</li>
+        <li>Aim it with <b>horizontal tilt</b> (pan), <b>vertical tilt</b> (pitch) and <b>roll</b>.</li>
+        <li>Pick a <b>sensor model</b> (HLK-LD2450, HLK-LD2412) or set the horizontal and vertical field of view and max distance yourself.</li>
+      </ul>
+
+      <h3>Test spots in the room</h3>
+      <ul>
+        <li>Add <b>test points</b> where people will be (a sofa, a desk) and move them by typing or dragging.</li>
+        <li>Each point says whether it is detected and by which sensors, with the distance and angles, or why it is missed: out of range, outside the field of view, or blocked.</li>
+        <li><b>Aim</b> points the selected sensor straight at that point.</li>
+      </ul>
+
+      <h3>Find dead spots</h3>
+      <ul>
+        <li>Add <b>obstacles</b> (plain box, sofa, bookshelf, bed, kitchen island, partition wall) and set their position, size and rotation. Obstacles block the radar completely.</li>
+        <li>The <b>coverage slice</b> colors the floor plan at a chosen height: each sensor's color where only it sees, <span class="swatch" style="background:#1f2a5c"></span>dark blue (off-white in dark mode) where two or more overlap, <span class="swatch" style="background:#7b4fc9"></span>purple for dead spots behind obstacles, and faint red where no sensor reaches.</li>
+        <li>The chips at the bottom of the view show how many points are detected, how much of the floor is covered, how much is seen by two or more sensors, and how much is hidden.</li>
+      </ul>
+
+      <h3>Adjust the display</h3>
+      <ul>
+        <li>Show every sensor's cone or only the selected one's, clip cones at the walls and ceiling, show range rings, snap dragging to 5 cm (1 inch), and turn the coverage slice on or off.</li>
+      </ul>
+
+      <h3>Save and share</h3>
+      <ul>
+        <li><b>Export JSON</b> saves the setup to a file; <b>Import JSON</b> loads one back.</li>
+        <li><b>Copy share link</b> copies a link that opens the same setup.</li>
+        <li><b>Reset to example room</b> (click twice) starts over.</li>
+      </ul>
     </main>
   </body>
 </html>

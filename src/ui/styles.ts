@@ -91,6 +91,14 @@ export const styles = css`
   section { border-top: 1px solid var(--line); padding-block: 14px; display: flex; flex-direction: column; gap: 10px; }
   h2 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0;
     display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .sec-toggle { display: inline-flex; align-items: center; gap: 6px; flex: 1; min-width: 0; margin: -4px 0; padding: 4px 0;
+    background: none; border: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; text-align: left; cursor: pointer; }
+  .sec-toggle:hover { color: var(--fg); }
+  .sec-toggle svg { width: 10px; height: 10px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.15s; }
+  .sec-toggle[aria-expanded="false"] svg { transform: rotate(-90deg); }
+  /* a folded section keeps only its header row */
+  section.collapsed { gap: 0; }
+  section.collapsed > :not(h2) { display: none !important; }
   h2 .act-name { text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 12px; }
   .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

@@ -439,6 +439,40 @@ export class MmwavePlanner extends LitElement {
     if (this.hasUpdated) { this.colors = readTheme(this); this.store.update(); }
   };
 
+  // ---------- collapsible panel sections ----------
+  // Folded sections are a per-visitor preference, remembered in this browser (shared by every planner on the site).
+  private static readonly SECTIONS_KEY = "mmwave-planner:collapsed-sections";
+  private collapsed: Set<string> = MmwavePlanner.loadCollapsed();
+
+  private static loadCollapsed(): Set<string> {
+    try {
+      const v = JSON.parse(localStorage.getItem(MmwavePlanner.SECTIONS_KEY) ?? "[]");
+      return new Set(Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  private toggleSection(key: string): void {
+    if (this.collapsed.has(key)) this.collapsed.delete(key);
+    else this.collapsed.add(key);
+    try { localStorage.setItem(MmwavePlanner.SECTIONS_KEY, JSON.stringify([...this.collapsed])); } catch { /* storage unavailable */ }
+    this.requestUpdate();
+  }
+
+  private secClass(key: string): string {
+    return this.collapsed.has(key) ? "collapsed" : "";
+  }
+
+  /** A section title that folds or opens its section. Header buttons beside it (Add sensor, …) don't toggle. */
+  private secToggle(key: string, label: string): TemplateResult {
+    const open = !this.collapsed.has(key);
+    return html`<button type="button" class="sec-toggle" aria-expanded=${String(open)}
+      title=${open ? "Hide this section" : "Show this section"} @click=${() => this.toggleSection(key)}>
+      <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" /></svg>${label}
+    </button>`;
+  }
+
   // ---------- small helpers ----------
   private get units() { return this.store.state.view.units; }
 
@@ -563,8 +597,8 @@ export class MmwavePlanner extends LitElement {
     const r = st.room, pitched = isPitched(r);
     const roomField = (id: string, label: TemplateResult | string, k: "w" | "d" | "h" | "peak", max: number) =>
       this.field({ id, label, len: true, min: 0.5, max, step: 0.1, get: () => this.store.state.room[k], set: (v, c) => this.editRoom((s) => { s.room[k] = v; }, c) });
-    return html`<section aria-labelledby="h-room">
-      <h2 id="h-room">Room</h2>
+    return html`<section aria-labelledby="h-room" class=${this.secClass("room")}>
+      <h2 id="h-room">${this.secToggle("room", "Room")}</h2>
       <div class="grid3">
         ${roomField("room-w", html`Width <b>X</b>`, "w", 50)}
         ${roomField("room-d", html`Depth <b>Y</b>`, "d", 50)}
@@ -607,8 +641,8 @@ export class MmwavePlanner extends LitElement {
   private sensorsSection(st: PlannerState): TemplateResult {
     const a = activeSensor(st);
     const selected = this.selection?.kind === "sensor" && this.selection.id === a.id;
-    return html`<section aria-labelledby="h-sensors">
-      <h2 id="h-sensors">Sensors <button type="button" class="btn small primary" @click=${() => this.edit((s) => {
+    return html`<section aria-labelledby="h-sensors" class=${this.secClass("sensors")}>
+      <h2 id="h-sensors">${this.secToggle("sensors", "Sensors")} <button type="button" class="btn small primary" @click=${() => this.edit((s) => {
         const added = addSensor(s, activeSensor(s));
         if (this.selection?.kind === "sensor") this.selection = { kind: "sensor", id: added.id }; // arrows follow to the new sensor
       })}>Add sensor</button></h2>
@@ -640,8 +674,8 @@ export class MmwavePlanner extends LitElement {
       get: () => activeSensor(this.store.state)[k],
       set: (v) => this.editActive((s, sst) => { s[k] = v; if (k !== "z") clampToRoom(sst, s); })
     });
-    return html`<section aria-labelledby="h-pos">
-      <h2 id="h-pos"><span>Position</span>${this.actName(st)}</h2>
+    return html`<section aria-labelledby="h-pos" class=${this.secClass("pos")}>
+      <h2 id="h-pos">${this.secToggle("pos", "Position")}${this.actName(st)}</h2>
       <div class="grid3">${posField("x", st.room.w)}${posField("y", st.room.d)}${posField("z", ceilAt(cp, a.x, a.y))}</div>
       <div class="field">
         <label for="preset">Quick mount</label>
@@ -667,8 +701,8 @@ export class MmwavePlanner extends LitElement {
       id: k, label, min, max, sMin: min, sMax: max, sStep: 1, unit: "°", d: 1, help,
       get: () => activeSensor(this.store.state)[k], set: (v) => this.editActive((s) => { s[k] = v; })
     });
-    return html`<section aria-labelledby="h-aim">
-      <h2 id="h-aim"><span>Tilt</span>${this.actName(st)}</h2>
+    return html`<section aria-labelledby="h-aim" class=${this.secClass("aim")}>
+      <h2 id="h-aim">${this.secToggle("aim", "Tilt")}${this.actName(st)}</h2>
       ${angle("pan", "Horizontal tilt (pan)", -180, 180, "0° faces +Y (into the room), 90° faces +X.")}
       ${angle("tilt", "Vertical tilt (pitch)", -90, 90, "Negative aims down. −90° points straight at the floor.")}
       ${angle("roll", "Roll", -180, 180, "Rotates the field of view around the facing direction, e.g. 90° for a sensor mounted on its side.")}
@@ -682,8 +716,8 @@ export class MmwavePlanner extends LitElement {
       id: k, label, min: 1, max: 180, sMin: 1, sMax: 180, sStep: 1, unit: "°", d: 1,
       get: () => activeSensor(this.store.state)[k], set: (v) => this.editActive((s) => { s[k] = v; })
     });
-    return html`<section aria-labelledby="h-radar">
-      <h2 id="h-radar"><span>Radar parameters</span>${this.actName(st)}</h2>
+    return html`<section aria-labelledby="h-radar" class=${this.secClass("radar")}>
+      <h2 id="h-radar">${this.secToggle("radar", "Radar parameters")}${this.actName(st)}</h2>
       <div class="field">
         <label for="model">Sensor model</label>
         <select id="model" @change=${(e: Event) => this.editActive((s) => applyModel(s, (e.target as HTMLSelectElement).value))}>
@@ -703,8 +737,8 @@ export class MmwavePlanner extends LitElement {
 
   private pointsSection(st: PlannerState): TemplateResult {
     const multi = st.sensors.length > 1;
-    return html`<section aria-labelledby="h-pts">
-      <h2 id="h-pts">Test points <button type="button" class="btn small primary"
+    return html`<section aria-labelledby="h-pts" class=${this.secClass("pts")}>
+      <h2 id="h-pts">${this.secToggle("pts", "Test points")} <button type="button" class="btn small primary"
         @click=${() => { let id = 0; this.edit((s) => { id = addPoint(s).id; }); this.select({ kind: "point", id }); }}>Add point</button></h2>
       <div class="list">
         ${st.points.length ? st.points.map((p) => this.pointCard(p, multi)) : html`<p class="empty">No test points yet. Add one, then drag it in the 3D view or type its coordinates.</p>`}
@@ -752,8 +786,8 @@ export class MmwavePlanner extends LitElement {
   }
 
   private obstaclesSection(st: PlannerState): TemplateResult {
-    return html`<section aria-labelledby="h-obs">
-      <h2 id="h-obs">Obstacles
+    return html`<section aria-labelledby="h-obs" class=${this.secClass("obs")}>
+      <h2 id="h-obs">${this.secToggle("obs", "Obstacles")}
         <select class="add-sel" aria-label="Add an obstacle" .value=${""} @change=${(e: Event) => {
           const el = e.target as HTMLSelectElement, v = el.value;
           el.value = "";
@@ -809,8 +843,8 @@ export class MmwavePlanner extends LitElement {
     const v = st.view, imp = this.units === "ftin";
     const check = (k: "clip" | "rings" | "snap" | "slice", label: string) => html`<label class="check">
       <input type="checkbox" .checked=${v[k]} @change=${(e: Event) => this.edit((s) => { s.view[k] = (e.target as HTMLInputElement).checked; })} /> ${label}</label>`;
-    return html`<section aria-labelledby="h-disp">
-      <h2 id="h-disp">Display</h2>
+    return html`<section aria-labelledby="h-disp" class=${this.secClass("disp")}>
+      <h2 id="h-disp">${this.secToggle("disp", "Display")}</h2>
       <div class="field">
         <label for="opt-cones">Coverage cones</label>
         <select id="opt-cones" .value=${v.cones} @change=${(e: Event) => this.edit((s) => { s.view.cones = (e.target as HTMLSelectElement).value as "all" | "active"; })}>
